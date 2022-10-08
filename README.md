@@ -13,4 +13,5 @@
 
 ### Asciinema
 
+[![App demo](https://asciinema.org/a/QjzlVm8jPsz0zMGA1wmU9IRG7.svg)](https://asciinema.org/a/QjzlVm8jPsz0zMGA1wmU9IRG7)
 
