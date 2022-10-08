@@ -3,6 +3,17 @@ import fs from 'fs/promises';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 
+const getErrorType = (errorCode) => {
+  switch (true) {
+    case errorCode >= 400 && errorCode < 500:
+      return 'Client';
+    case errorCode >= 500 && errorCode < 600:
+      return 'Server';
+    default:
+      return 'Connection';
+  }
+};
+
 const slugifyUrl = (url) => {
   const { pathname, hostname } = url;
   const name = path.join(hostname, pathname);
@@ -37,7 +48,7 @@ const extractAssets = (data, pageUrl, dirName) => {
   const $ = cheerio.load(data);
   const assets = Object.entries(tagsAttributes)
     .flatMap(([tagName, attribute]) => {
-      const assetData = $(tagName)
+      const assetData = $(`${tagName}[${attribute}]`)
         .toArray()
         .map((element) => {
           const $element = $(element);
@@ -52,11 +63,11 @@ const extractAssets = (data, pageUrl, dirName) => {
 
       return assetData;
     })
-    .filter(({ assetUrl }) => assetUrl.origin === origin && assetUrl.pathname !== '/undefined')
+    .filter(({ assetUrl }) => assetUrl.origin === origin)
     .map(({
       $element, assetUrl, attribute, name,
     }) => {
-      $element.attr(attribute, path.join(dirName, name));
+      $element.attr(attribute, `${dirName}/${name}`);
 
       return { assetUrl, name };
     });
@@ -78,4 +89,5 @@ export {
   extractAssets,
   writeFile,
   downloadAsset,
+  getErrorType,
 };

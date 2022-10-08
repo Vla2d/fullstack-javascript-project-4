@@ -10,6 +10,7 @@ import {
   extractAssets,
   writeFile,
   downloadAsset,
+  getErrorType,
 } from './utils.js';
 
 const log = debug('page-loader');
@@ -24,6 +25,9 @@ const loadPage = (url, outputDirPath = process.cwd()) => {
   const dirPath = path.join(outputDirPath, dirName);
 
   return axios.get(url)
+    .catch(({ message, response }) => {
+      throw new Error(`${message}. ${getErrorType(response?.status)} error.`);
+    })
     .then(({ data: html }) => {
       log(`Assets directory path: '${dirPath}'`);
 

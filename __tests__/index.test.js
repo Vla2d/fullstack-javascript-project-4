@@ -4,6 +4,7 @@ import os from 'os';
 import path, { dirname } from 'path';
 import fs from 'fs/promises';
 import loadPage from '../src/index.js';
+import { getErrorType } from '../src/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -16,8 +17,12 @@ const pageUrl = new URL('/courses', 'https://ru.hexlet.io/');
 nock.disableNetConnect();
 const scope = nock(pageUrl.origin).persist();
 
+let tempDirPath;
+beforeAll(async () => {
+  tempDirPath = await fs.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
+});
+
 describe('Positive cases:', () => {
-  let tempDirPath;
   let expectedDownloadedImage;
   let expectedChangedPage;
 
@@ -29,7 +34,6 @@ describe('Positive cases:', () => {
     const expectedChangedPageName = fixtures.find((el) => path.extname(el) === '.html');
     const expectedDownloadedImageName = downloadedAssets.find((el) => new RegExp(/\.(gif|jpe?g|tiff?|png|webp|bmp)$/, 'i').test(path.extname(el)));
 
-    tempDirPath = await fs.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
     // eslint-disable-next-line max-len
     expectedDownloadedImage = await readFile(getFixturePath(expectedDownloadedImageName, downloadedAssetsFolder));
     expectedChangedPage = await readFile(getFixturePath(expectedChangedPageName));
@@ -66,26 +70,26 @@ describe('Negative cases:', () => {
       await expect(loadPage(pageUrl.toString(), '/wrong-folder'))
         .rejects.toThrow('ENOENT');
     });
+
+    test('Non-accessed output folder', async () => {
+      await fs.chmod(path.join(tempDirPath), 0o400);
+
+      await expect(loadPage(pageUrl.toString(), tempDirPath))
+        .rejects.toThrow('EACCES');
+    });
   });
 
   describe('Network errors:', () => {
-    test.each([403])('Client error response: %d', async (responseCode) => {
-      // const errorUrl = new URL(responseCode, pageUrl.origin);
-      const errorUrl = new URL('httpstatusco', 'https://www.restapitutorial.com/');
-
-      nock.enableNetConnect();
+    test.each([404, 500, 1])('Client error response: %d', async (responseCode) => {
+      const errorUrl = new URL(responseCode, pageUrl.origin);
       scope
         .get(errorUrl.pathname)
         .reply(responseCode);
 
-      await expect(loadPage(errorUrl.toString()))
-        .rejects.toThrow(`Request failed with status code ${responseCode}`);
+      const errType = getErrorType(responseCode);
 
-      /* await loadPage(errorUrl.toString()) возвращает строку -
-
-       `Request failed with status code ${responseCode}`
-
-       Откуда происходит возврат этой строки? */
+      await expect(loadPage(errorUrl.toString(), tempDirPath))
+        .rejects.toThrow(`Request failed with status code ${responseCode}. ${errType} error.`);
     });
   });
 });

@@ -10,9 +10,8 @@ program
   .action((pagepath, options) => {
     loadPage(pagepath, options.output)
       .then((pagePath) => console.log(pagePath))
-      .catch(({ message, response }) => {
-        const isClientError = !!((response.status > 400 && response.status < 500));
-        console.error(`${message}. ${isClientError ? 'Client' : 'Server'} error.`);
+      .catch((err) => {
+        console.error(err.message);
         process.exit(1);
       });
   })
