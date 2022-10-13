@@ -13,7 +13,7 @@ jobs:
     strategy:
       # Node versions list
       matrix:
-        node-version: [14.x]
+        node-version: [16.x]
 
     steps:
         # Check-out repository under GitHub workspace
@@ -30,14 +30,21 @@ jobs:
       - name: install dependencies
         # Install project
         run: |
-          npm ci
+          make install
         # Add environment variables
         env:
           CI: true
       - name: Run linter
         # Run Linter
         run: |
-          npm run lint-fix
+          make lint 
       - name: Run tests
         run: |
-          npm test
+          make test
+      - name: Publish to code climate
+        uses: paambaati/codeclimate-action@v2.7.4
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        with:
+          coverageCommand: make test-coverage
+          debug: true

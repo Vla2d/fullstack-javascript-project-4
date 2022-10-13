@@ -3,17 +3,6 @@ import fs from 'fs/promises';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 
-const getErrorType = (errorCode) => {
-  switch (true) {
-    case errorCode >= 400 && errorCode < 500:
-      return 'Client';
-    case errorCode >= 500 && errorCode < 600:
-      return 'Server';
-    default:
-      return 'Connection';
-  }
-};
-
 const slugifyUrl = (url) => {
   const { pathname, hostname } = url;
   const name = path.join(hostname, pathname);
@@ -89,5 +78,4 @@ export {
   extractAssets,
   writeFile,
   downloadAsset,
-  getErrorType,
 };

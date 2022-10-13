@@ -11,6 +11,7 @@
   "scripts": {
     "test": "npx jest --bail",
     "windowsDebug": "@powershell -Command $env:DEBUG='page-loader';page-loader $npm_config_url",
+    "lint": "npx eslint .",
     "lint-fix": "npx eslint --fix .",
     "test-coverage": "npm test -- --coverage --coverageProvider=v8"
   },

@@ -10,8 +10,8 @@ program
   .action((pagepath, options) => {
     loadPage(pagepath, options.output)
       .then((pagePath) => console.log(pagePath))
-      .catch((err) => {
-        console.error(err.message);
+      .catch(({ message }) => {
+        console.error(message);
         process.exit(1);
       });
   })

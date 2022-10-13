@@ -11,7 +11,18 @@
 [![Tests, Linter](https://github.com/Vla2d/fullstack-javascript-project-4/actions/workflows/NodeCI.yml/badge.svg)](https://github.com/Vla2d/fullstack-javascript-project-4/actions/workflows/NodeCI.yml)
 
 
-### Asciinema
+### --help output
+[![App demo](https://asciinema.org/a/vmve6Q8SFmSThUDLtFCllNq5J.svg)](https://asciinema.org/a/vmve6Q8SFmSThUDLtFCllNq5J)
 
-[![App demo](https://asciinema.org/a/QjzlVm8jPsz0zMGA1wmU9IRG7.svg)](https://asciinema.org/a/QjzlVm8jPsz0zMGA1wmU9IRG7)
+### page-loader download output
+[![App demo](https://asciinema.org/a/i0EOHcs38yK0nO3R0tS2Fvlod.svg)](https://asciinema.org/a/i0EOHcs38yK0nO3R0tS2Fvlod)
+
+### page-loader downloaded and changed html page
+[![App demo](https://asciinema.org/a/HOcpTYjqs5OJGawf8eMYNascf.svg)](https://asciinema.org/a/HOcpTYjqs5OJGawf8eMYNascf)
+
+### page-loader request error
+[![App demo](https://asciinema.org/a/UmxeOnUh4oViBGrYtHA8MTUow.svg)](https://asciinema.org/a/UmxeOnUh4oViBGrYtHA8MTUow)
+
+### page-loader executed with debug
+[![App demo](https://asciinema.org/a/quEFkKQlcR0f8Xus0yJp7d3bq.svg)](https://asciinema.org/a/quEFkKQlcR0f8Xus0yJp7d3bq)
 

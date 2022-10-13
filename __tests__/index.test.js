@@ -4,7 +4,6 @@ import os from 'os';
 import path, { dirname } from 'path';
 import fs from 'fs/promises';
 import loadPage from '../src/index.js';
-import { getErrorType } from '../src/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -12,7 +11,26 @@ const fixturesPath = path.join(__dirname, '..', '__fixtures__');
 const getFixturePath = (fileName, assetsFolderName = '') => path.join(fixturesPath, assetsFolderName, fileName);
 const readFile = (filepath) => fs.readFile(filepath, 'utf-8');
 
-const pageUrl = new URL('/courses', 'https://ru.hexlet.io/');
+const pageUrl = new URL('/courses', 'https://page-loader.hexlet.repl.co/');
+
+const assetsAndFixturesPathes = {
+  page: {
+    assetPath: '/courses',
+    fixturePath: 'page-loader-hexlet-repl-co-courses_files/page-loader-hexlet-repl-co-courses.html',
+  },
+  img: {
+    assetPath: '/assets/professions/nodejs.png',
+    fixturePath: 'page-loader-hexlet-repl-co-courses_files/page-loader-hexlet-repl-co-assets-professions-nodejs.png',
+  },
+  styles: {
+    assetPath: '/assets/application.css',
+    fixturePath: 'page-loader-hexlet-repl-co-courses_files/page-loader-hexlet-repl-co-assets-application.css',
+  },
+  script: {
+    assetPath: '/script.js',
+    fixturePath: 'page-loader-hexlet-repl-co-courses_files/page-loader-hexlet-repl-co-script.js',
+  },
+};
 
 nock.disableNetConnect();
 const scope = nock(pageUrl.origin).persist();
@@ -23,50 +41,48 @@ beforeAll(async () => {
 });
 
 describe('Positive cases:', () => {
-  let expectedDownloadedImage;
-  let expectedChangedPage;
-
   beforeEach(async () => {
-    const fixtures = await fs.readdir(fixturesPath);
-    const downloadedAssetsFolder = fixtures.find((el) => !path.extname(el));
-    const downloadedAssets = await fs.readdir(getFixturePath(downloadedAssetsFolder));
+    Object.keys(assetsAndFixturesPathes).forEach((key) => {
+      const { assetPath, fixturePath } = assetsAndFixturesPathes[key];
 
-    const expectedChangedPageName = fixtures.find((el) => path.extname(el) === '.html');
-    const expectedDownloadedImageName = downloadedAssets.find((el) => new RegExp(/\.(gif|jpe?g|tiff?|png|webp|bmp)$/, 'i').test(path.extname(el)));
-
-    // eslint-disable-next-line max-len
-    expectedDownloadedImage = await readFile(getFixturePath(expectedDownloadedImageName, downloadedAssetsFolder));
-    expectedChangedPage = await readFile(getFixturePath(expectedChangedPageName));
+      scope
+        .get(assetPath)
+        .replyWithFile(200, getFixturePath(fixturePath));
+    });
   });
 
   test('Changed HTML should match expected', async () => {
-    scope
-      .get(pageUrl.pathname)
-      .replyWithFile(200, getFixturePath('ru-hexlet-io-courses_files/ru-hexlet-io-courses.html'))
-      .get('/assets/professions/nodejs.png')
-      .replyWithFile(200, getFixturePath('ru-hexlet-io-courses_files/ru-hexlet-io-assets-nodejs.png'));
-
     await loadPage(pageUrl.toString(), tempDirPath);
 
-    const changedPage = await readFile(path.join(tempDirPath, 'ru-hexlet-io-courses.html'));
-    expect(changedPage).toBe(expectedChangedPage);
+    const fixtures = await fs.readdir(fixturesPath);
+    const changedPageFixturePath = fixtures.find((el) => path.extname(el) === '.html');
+
+    const changedPage = await readFile(path.join(tempDirPath, 'page-loader-hexlet-repl-co-courses.html'));
+    expect(changedPage).toBe(await readFile(getFixturePath(changedPageFixturePath)));
   });
 
   test('Downloaded assets should match expected', async () => {
-    scope
-      .get('/assets/professions/nodejs.png')
-      .replyWithFile(200, getFixturePath('ru-hexlet-io-courses_files/ru-hexlet-io-assets-nodejs.png'));
-
     await loadPage(pageUrl.toString(), tempDirPath);
 
-    const downloadedImg = await readFile(path.join(tempDirPath, 'ru-hexlet-io-courses_files', 'ru-hexlet-io-assets-professions-nodejs.png'));
-    expect(downloadedImg).toEqual(expectedDownloadedImage);
+    /* eslint-disable max-len */
+    const downloadedImg = await readFile(path.join(tempDirPath, assetsAndFixturesPathes.img.fixturePath));
+    const downloadedStyles = await readFile(path.join(tempDirPath, assetsAndFixturesPathes.styles.fixturePath));
+    const downloadedScript = await readFile(path.join(tempDirPath, assetsAndFixturesPathes.script.fixturePath));
+    const downloadedPage = await readFile(path.join(tempDirPath, assetsAndFixturesPathes.page.fixturePath));
+
+    expect(downloadedImg).toEqual(await readFile(getFixturePath(assetsAndFixturesPathes.img.fixturePath)));
+    expect(downloadedStyles).toEqual(await readFile(getFixturePath(assetsAndFixturesPathes.styles.fixturePath)));
+    expect(downloadedScript).toEqual(await readFile(getFixturePath(assetsAndFixturesPathes.script.fixturePath)));
+    expect(downloadedPage).toEqual(await readFile(getFixturePath(assetsAndFixturesPathes.page.fixturePath)));
+    /* eslint-enable max-len */
   });
 });
 
 describe('Negative cases:', () => {
   describe('Filesystem errors:', () => {
     test('Non-existent output folder', async () => {
+      nock.enableNetConnect();
+
       await expect(loadPage(pageUrl.toString(), '/wrong-folder'))
         .rejects.toThrow('ENOENT');
     });
@@ -80,16 +96,17 @@ describe('Negative cases:', () => {
   });
 
   describe('Network errors:', () => {
-    test.each([404, 500, 1])('Client error response: %d', async (responseCode) => {
-      const errorUrl = new URL(responseCode, pageUrl.origin);
-      scope
-        .get(errorUrl.pathname)
-        .reply(responseCode);
+    describe('HTTP error responses:', () => {
+      test.each([404, 500])('Client error response: %d', async (responseCode) => {
+        const errorUrl = new URL(responseCode, pageUrl.origin);
 
-      const errType = getErrorType(responseCode);
+        scope
+          .get(errorUrl.pathname)
+          .reply(responseCode);
 
-      await expect(loadPage(errorUrl.toString(), tempDirPath))
-        .rejects.toThrow(`Request failed with status code ${responseCode}. ${errType} error.`);
+        await expect(loadPage(errorUrl.toString(), tempDirPath))
+          .rejects.toThrow(`Request failed with status code ${responseCode}`);
+      });
     });
   });
 });
