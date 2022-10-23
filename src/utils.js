@@ -7,10 +7,10 @@ const slugifyUrl = (url) => {
   const { pathname, hostname } = url;
   const name = path.join(hostname, pathname);
 
-  return name.replace(/[^\w]/g, '-');
+  return name.replace(/\W/g, '-');
 };
 
-const slugifyFileName = (url) => {
+const transformUrlToFileName = (url) => {
   const { pathname, origin } = url;
   const { ext, dir, name } = path.parse(pathname);
   const urlWithoutExt = new URL(path.join(dir, name), origin);
@@ -20,7 +20,7 @@ const slugifyFileName = (url) => {
   return `${slugifiedUrl}${fileExtension}`;
 };
 
-const slugifyDirName = (url) => {
+const transformUrlToDirName = (url) => {
   const slugifiedUrl = slugifyUrl(url);
 
   return `${slugifiedUrl}_files`;
@@ -43,7 +43,7 @@ const extractAssets = (data, pageUrl, dirName) => {
           const $element = $(element);
           const src = $element.attr(attribute);
           const assetUrl = new URL(src, origin);
-          const name = slugifyFileName(assetUrl);
+          const name = transformUrlToFileName(assetUrl);
 
           return {
             $element, assetUrl, attribute, name,
@@ -73,8 +73,8 @@ const downloadAsset = (pageUrl, assetPath) => axios
   .then((response) => writeFile(assetPath, response.data));
 
 export {
-  slugifyDirName,
-  slugifyFileName,
+  transformUrlToDirName,
+  transformUrlToFileName,
   extractAssets,
   writeFile,
   downloadAsset,

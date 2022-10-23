@@ -3,15 +3,25 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 import path, { dirname } from 'path';
 import fs from 'fs/promises';
+import { beforeAll } from '@jest/globals';
 import loadPage from '../src/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const readFile = (filepath, encoding = 'utf-8') => fs.readFile(filepath, encoding);
+const readDir = (dirpath) => fs.readdir(dirpath);
 const fixturesPath = path.join(__dirname, '..', '__fixtures__');
 const getFixturePath = (fileName, assetsFolderName = '') => path.join(fixturesPath, assetsFolderName, fileName);
-const readFile = (filepath) => fs.readFile(filepath, 'utf-8');
 
 const pageUrl = new URL('/courses', 'https://page-loader.hexlet.repl.co/');
+
+nock.disableNetConnect();
+const scope = nock(pageUrl.origin).persist();
+
+let tempDirPath;
+beforeAll(async () => {
+  tempDirPath = await fs.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
+});
 
 const assetsAndFixturesPathes = {
   page: {
@@ -32,16 +42,32 @@ const assetsAndFixturesPathes = {
   },
 };
 
-nock.disableNetConnect();
-const scope = nock(pageUrl.origin).persist();
+const downloadedAndFixtureAssetsData = {
+  page: {
+    downloadedFile: '',
+    fixtureFile: '',
+  },
+  img: {
+    downloadedFile: '',
+    fixtureFile: '',
+  },
+  styles: {
+    downloadedFile: '',
+    fixtureFile: '',
+  },
+  script: {
+    downloadedFile: '',
+    fixtureFile: '',
+  },
+};
 
-let tempDirPath;
-beforeAll(async () => {
-  tempDirPath = await fs.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
-});
+const changedPage = {
+  actualChangedPageFile: '',
+  fixtureChangedPageFile: '',
+};
 
 describe('Positive cases:', () => {
-  beforeEach(async () => {
+  beforeAll(async () => {
     Object.keys(assetsAndFixturesPathes).forEach((key) => {
       const { assetPath, fixturePath } = assetsAndFixturesPathes[key];
 
@@ -49,32 +75,30 @@ describe('Positive cases:', () => {
         .get(assetPath)
         .replyWithFile(200, getFixturePath(fixturePath));
     });
+
+    await loadPage(pageUrl.toString(), tempDirPath);
+    Object.keys(downloadedAndFixtureAssetsData).forEach(async (key) => {
+      const { fixturePath } = assetsAndFixturesPathes[key];
+      const fileType = downloadedAndFixtureAssetsData[key];
+
+      fileType.fixtureFile = await readFile(getFixturePath(fixturePath));
+      fileType.downloadedFile = await readFile(path.join(tempDirPath, fixturePath));
+    });
+
+    const fixtures = await readDir(fixturesPath);
+    const changedPageFixturePath = fixtures.find((el) => path.extname(el) === '.html');
+    changedPage.actualChangedPageFile = await readFile(path.join(tempDirPath, 'page-loader-hexlet-repl-co-courses.html'));
+    changedPage.fixtureChangedPageFile = await readFile(getFixturePath(changedPageFixturePath));
   });
 
   test('Changed HTML should match expected', async () => {
-    await loadPage(pageUrl.toString(), tempDirPath);
-
-    const fixtures = await fs.readdir(fixturesPath);
-    const changedPageFixturePath = fixtures.find((el) => path.extname(el) === '.html');
-
-    const changedPage = await readFile(path.join(tempDirPath, 'page-loader-hexlet-repl-co-courses.html'));
-    expect(changedPage).toBe(await readFile(getFixturePath(changedPageFixturePath)));
+    expect(changedPage.actualChangedPageFile).toBe(changedPage.fixtureChangedPageFile);
   });
 
-  test('Downloaded assets should match expected', async () => {
-    await loadPage(pageUrl.toString(), tempDirPath);
+  test.each(Object.keys(downloadedAndFixtureAssetsData))('Downloaded assets should match expected', async (fileType) => {
+    const { downloadedFile, fixtureFile } = downloadedAndFixtureAssetsData[fileType];
 
-    /* eslint-disable max-len */
-    const downloadedImg = await readFile(path.join(tempDirPath, assetsAndFixturesPathes.img.fixturePath));
-    const downloadedStyles = await readFile(path.join(tempDirPath, assetsAndFixturesPathes.styles.fixturePath));
-    const downloadedScript = await readFile(path.join(tempDirPath, assetsAndFixturesPathes.script.fixturePath));
-    const downloadedPage = await readFile(path.join(tempDirPath, assetsAndFixturesPathes.page.fixturePath));
-
-    expect(downloadedImg).toEqual(await readFile(getFixturePath(assetsAndFixturesPathes.img.fixturePath)));
-    expect(downloadedStyles).toEqual(await readFile(getFixturePath(assetsAndFixturesPathes.styles.fixturePath)));
-    expect(downloadedScript).toEqual(await readFile(getFixturePath(assetsAndFixturesPathes.script.fixturePath)));
-    expect(downloadedPage).toEqual(await readFile(getFixturePath(assetsAndFixturesPathes.page.fixturePath)));
-    /* eslint-enable max-len */
+    expect(downloadedFile).toEqual(fixtureFile);
   });
 });
 
@@ -96,7 +120,7 @@ describe('Negative cases:', () => {
   });
 
   describe('Network errors:', () => {
-    describe('HTTP error responses:', () => {
+    describe('HTTP errors:', () => {
       test.each([404, 500])('Client error response: %d', async (responseCode) => {
         const errorUrl = new URL(responseCode, pageUrl.origin);
 
@@ -107,6 +131,17 @@ describe('Negative cases:', () => {
         await expect(loadPage(errorUrl.toString(), tempDirPath))
           .rejects.toThrow(`Request failed with status code ${responseCode}`);
       });
+    });
+
+    test('Connection error', async () => {
+      const nonExistentUrl = new URL(undefined, pageUrl.origin);
+
+      scope
+        .get(nonExistentUrl.pathname)
+        .replyWithError('some-error');
+
+      await expect(loadPage(nonExistentUrl.toString()))
+        .rejects.toThrow();
     });
   });
 });

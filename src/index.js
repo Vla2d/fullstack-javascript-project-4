@@ -5,8 +5,8 @@ import axios from 'axios';
 import 'axios-debug-log';
 import Listr from 'listr';
 import {
-  slugifyDirName,
-  slugifyFileName,
+  transformUrlToDirName,
+  transformUrlToFileName,
   extractAssets,
   writeFile,
   downloadAsset,
@@ -14,12 +14,12 @@ import {
 
 const log = debug('page-loader');
 
-const loadPage = (url, outputDirPath = process.cwd()) => {
+const loadPage = (url, outputDirPath = '') => {
   log(`Page loader has started with url: ${url}, outputDirpath: ${outputDirPath}`);
   const pageUrl = new URL(url);
-  const pageName = slugifyFileName(pageUrl);
-  const dirName = slugifyDirName(pageUrl);
-  const pagePath = path.join(outputDirPath, pageName);
+  const pageFileName = transformUrlToFileName(pageUrl);
+  const dirName = transformUrlToDirName(pageUrl);
+  const pageFilePath = path.join(outputDirPath, pageFileName);
   const dirPath = path.join(outputDirPath, dirName);
 
   return axios.get(url)
@@ -30,16 +30,21 @@ const loadPage = (url, outputDirPath = process.cwd()) => {
         .catch(() => fs.mkdir(dirPath))
         .then(() => html);
     })
-    .then((html) => extractAssets(html, pageUrl, dirName))
-    .then(({ html, assets }) => {
-      log(`HTML page path: '${pagePath}'`);
+    .then((html) => {
+      log('Extracting assets...');
 
-      return writeFile(pagePath, html)
+      return extractAssets(html, pageUrl, dirName);
+    })
+    .then(({ html, assets }) => {
+      log(`HTML page path: '${pageFilePath}'`);
+
+      return writeFile(pageFilePath, html)
         .then(() => assets);
     })
     .then((assets) => {
       const tasks = assets.map(({ assetUrl, name }) => {
         const assetPath = path.resolve(dirPath, name);
+        // console.log(path.extname(assetPath)) // reg exp ???????
         return {
           title: `Downloading asset: ${assetUrl.toString()}`,
           task: () => downloadAsset(assetUrl.toString(), assetPath),
@@ -48,7 +53,7 @@ const loadPage = (url, outputDirPath = process.cwd()) => {
 
       return new Listr(tasks, { concurrent: true }).run();
     })
-    .then(() => `Page was successfully downloaded into '${pagePath}'`);
+    .then(() => pageFilePath);
 };
 
 export default loadPage;
