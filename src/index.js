@@ -44,7 +44,7 @@ const loadPage = (url, outputDirPath = '') => {
     .then((assets) => {
       const tasks = assets.map(({ assetUrl, name }) => {
         const assetPath = path.resolve(dirPath, name);
-        // console.log(path.extname(assetPath)) // reg exp ???????
+
         return {
           title: `Downloading asset: ${assetUrl.toString()}`,
           task: () => downloadAsset(assetUrl.toString(), assetPath),
