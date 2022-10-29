@@ -3,25 +3,21 @@ import fs from 'fs/promises';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 
-const slugifyUrl = (url) => {
-  const { pathname, hostname } = url;
-  const name = path.join(hostname, pathname);
-
-  return name.replace(/\W/g, '-');
-};
+const slugifyUrl = (url) => url.replace(/\W+/g, '-').replace(/-+$/, '');
 
 const transformUrlToFileName = (url) => {
-  const { pathname, origin } = url;
+  const { pathname, hostname } = url;
   const { ext, dir, name } = path.parse(pathname);
-  const urlWithoutExt = new URL(path.join(dir, name), origin);
-  const slugifiedUrl = slugifyUrl(urlWithoutExt);
+  const slugifiedUrl = slugifyUrl(`${hostname}/${dir}/${name}`);
   const fileExtension = ext || '.html';
 
   return `${slugifiedUrl}${fileExtension}`;
 };
 
 const transformUrlToDirName = (url) => {
-  const slugifiedUrl = slugifyUrl(url);
+  const { pathname, hostname } = url;
+  const { dir, name } = path.parse(pathname);
+  const slugifiedUrl = slugifyUrl(`${hostname}/${dir}/${name}`);
 
   return `${slugifiedUrl}_files`;
 };
@@ -36,22 +32,18 @@ const extractAssets = (data, pageUrl, dirName) => {
   const { origin } = pageUrl;
   const $ = cheerio.load(data);
   const assets = Object.entries(tagsAttributes)
-    .flatMap(([tagName, attribute]) => {
-      const assetData = $(`${tagName}[${attribute}]`)
-        .toArray()
-        .map((element) => {
-          const $element = $(element);
-          const src = $element.attr(attribute);
-          const assetUrl = new URL(src, origin);
-          const name = transformUrlToFileName(assetUrl);
+    .flatMap(([tagName, attribute]) => $(`${tagName}[${attribute}]`)
+      .toArray()
+      .map((element) => {
+        const $element = $(element);
+        const src = $element.attr(attribute);
+        const assetUrl = new URL(src, origin);
+        const name = transformUrlToFileName(assetUrl);
 
-          return {
-            $element, assetUrl, attribute, name,
-          };
-        });
-
-      return assetData;
-    })
+        return {
+          $element, assetUrl, attribute, name,
+        };
+      }))
     .filter(({ assetUrl }) => assetUrl.origin === origin)
     .map(({
       $element, assetUrl, attribute, name,
@@ -66,7 +58,7 @@ const extractAssets = (data, pageUrl, dirName) => {
   return { html, assets };
 };
 
-const writeFile = (filePath, content) => fs.writeFile(filePath, content, { encoding: 'utf-8' });
+const writeFile = (filePath, content) => fs.writeFile(filePath, content);
 
 const downloadAsset = (pageUrl, assetPath) => axios
   .get(pageUrl, { responseType: 'arraybuffer' })
