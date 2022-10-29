@@ -10,7 +10,7 @@ program
   .action((pagepath, options) => {
     loadPage(pagepath, options.output)
       .then((pagePath) => console.log(`Page was successfully downloaded into '${pagePath}'`))
-      .catch((message) => {
+      .catch(({ message }) => {
         console.error(message);
         process.exit(1);
       });
