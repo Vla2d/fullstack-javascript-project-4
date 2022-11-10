@@ -12,17 +12,17 @@
 
 
 ### --help output
-[![App demo](https://asciinema.org/a/vmve6Q8SFmSThUDLtFCllNq5J.svg)](https://asciinema.org/a/vmve6Q8SFmSThUDLtFCllNq5J)
+[![App demo](https://asciinema.org/a/4MyjwrMZ0WCE5gvVbALuBoaNh.svg)](https://asciinema.org/a/4MyjwrMZ0WCE5gvVbALuBoaNh)
 
 ### page-loader download output
-[![App demo](https://asciinema.org/a/i0EOHcs38yK0nO3R0tS2Fvlod.svg)](https://asciinema.org/a/i0EOHcs38yK0nO3R0tS2Fvlod)
+[![App demo](https://asciinema.org/a/JZTUK7ph0E3NKetfGwpb55N8y.svg)](https://asciinema.org/a/JZTUK7ph0E3NKetfGwpb55N8y)
 
 ### page-loader downloaded and changed html page
-[![App demo](https://asciinema.org/a/HOcpTYjqs5OJGawf8eMYNascf.svg)](https://asciinema.org/a/HOcpTYjqs5OJGawf8eMYNascf)
+[![App demo](https://asciinema.org/a/4BonbGyxoS5H8QFxZbA7gAV5y.svg)](https://asciinema.org/a/4BonbGyxoS5H8QFxZbA7gAV5y)
 
 ### page-loader request error
-[![App demo](https://asciinema.org/a/UmxeOnUh4oViBGrYtHA8MTUow.svg)](https://asciinema.org/a/UmxeOnUh4oViBGrYtHA8MTUow)
+[![App demo](https://asciinema.org/a/ZqCXjep53xTaOs7G4F0VwXpa5.svg)](https://asciinema.org/a/ZqCXjep53xTaOs7G4F0VwXpa5)
 
 ### page-loader executed with debug
-[![App demo](https://asciinema.org/a/quEFkKQlcR0f8Xus0yJp7d3bq.svg)](https://asciinema.org/a/quEFkKQlcR0f8Xus0yJp7d3bq)
+[![App demo](https://asciinema.org/a/B21K7qNFPEwqmU7YxIURuaDXk.svg)](https://asciinema.org/a/B21K7qNFPEwqmU7YxIURuaDXk)
 
