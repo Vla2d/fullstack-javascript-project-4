@@ -50,8 +50,8 @@ const loadPage = (url, outputassetsDirPath = '') => {
           task: () => downloadAsset(assetUrl.toString(), assetPath)
             .catch(() => {}),
         };
-      })
-      
+      });
+
       const listr = new Listr(tasks, { concurrent: true });
 
       return listr.run();

@@ -18,7 +18,7 @@ nock.disableNetConnect();
 const scope = nock(baseUrl).persist();
 
 const pageFileName = 'page-loader-hexlet-repl-co-courses.html';
-const assetsFolderName = 'page-loader-hexlet-repl-co-courses_files'
+const assetsFolderName = 'page-loader-hexlet-repl-co-courses_files';
 
 let resourses = [
   {
