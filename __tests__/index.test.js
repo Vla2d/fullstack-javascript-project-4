@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 import path, { dirname } from 'path';
 import fs from 'fs/promises';
+import { afterAll } from '@jest/globals';
 import loadPage from '../src/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,7 +53,10 @@ let expectedPageContent;
 
 let outputDirPath;
 describe('Positive cases:', () => {
+  let initialCWD;
   beforeAll(async () => {
+    initialCWD = process.cwd();
+
     expectedPageContent = await readFile(getFixturePath(pageFileName));
 
     resourses = await Promise.all(resourses.map(async (asset) => {
@@ -87,6 +91,11 @@ describe('Positive cases:', () => {
       ];
     });
     downloadedFilesData = Object.fromEntries(await Promise.all(promises));
+  });
+
+  afterAll(() => {
+    // We restore initialCWD for proper github actions work
+    process.chdir(initialCWD);
   });
 
   test('Changed HTML should match expected', async () => {
