@@ -17,33 +17,34 @@ const pageUrl = new URL('/courses', baseUrl);
 nock.disableNetConnect();
 const scope = nock(baseUrl).persist();
 
+const pageFileName = 'page-loader-hexlet-repl-co-courses.html';
+const assetsFolderName = 'page-loader-hexlet-repl-co-courses_files'
+
 let resourses = [
   {
     assetPath: '/courses',
-    fixturePath: 'page-loader-hexlet-repl-co-courses_files/page-loader-hexlet-repl-co-courses.html',
+    fixturePath: `${assetsFolderName}/page-loader-hexlet-repl-co-courses.html`,
     fixtureData: '',
   },
   {
     assetPath: '/assets/professions/nodejs.png',
-    fixturePath: 'page-loader-hexlet-repl-co-courses_files/page-loader-hexlet-repl-co-assets-professions-nodejs.png',
+    fixturePath: `${assetsFolderName}/page-loader-hexlet-repl-co-assets-professions-nodejs.png`,
     fixtureData: '',
     isBinary: true,
   },
   {
     assetPath: '/assets/application.css',
-    fixturePath: 'page-loader-hexlet-repl-co-courses_files/page-loader-hexlet-repl-co-assets-application.css',
+    fixturePath: `${assetsFolderName}/page-loader-hexlet-repl-co-assets-application.css`,
     fixtureData: '',
   },
   {
     assetPath: '/script.js',
-    fixturePath: 'page-loader-hexlet-repl-co-courses_files/page-loader-hexlet-repl-co-script.js',
+    fixturePath: `${assetsFolderName}/page-loader-hexlet-repl-co-script.js`,
     fixtureData: '',
   },
 ];
 
 const assetPaths = resourses.map((asset) => asset.assetPath);
-
-const pageFileName = 'page-loader-hexlet-repl-co-courses.html';
 
 let downloadedFilesData = [];
 
@@ -100,13 +101,14 @@ describe('Positive cases:', () => {
     expect(downloadedFilesData[assetPath]).toStrictEqual(fixtureData);
   });
 
-  test('Files should be downloaded into current directory if -o parameter is not set', async () => {
+  test('Downloades into current directory by default', async () => {
     const outputTestDirPath = await fs.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
     process.chdir(outputTestDirPath);
 
     await loadPage(pageUrl.toString());
 
-    await expect((await fs.readdir(outputDirPath)).length).toBe(2);
+    await expect(fs.access(pageFileName)).resolves.not.toThrow();
+    await expect(fs.access(assetsFolderName)).resolves.not.toThrow();
   });
 });
 

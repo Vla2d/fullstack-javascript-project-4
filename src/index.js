@@ -42,21 +42,19 @@ const loadPage = (url, outputassetsDirPath = '') => {
         .then(() => assets);
     })
     .then((assets) => {
-      const tasks = new Listr(assets.map(({ assetUrl, name }) => {
+      const tasks = assets.map(({ assetUrl, name }) => {
         const assetPath = path.resolve(assetsDirPath, name);
 
         return {
           title: `Downloading asset: ${assetUrl.toString()}`,
           task: () => downloadAsset(assetUrl.toString(), assetPath)
-            .catch(() => {
-              throw new Error(`Asset could not be downloaded: ${assetUrl.toString()}`);
-            }),
+            .catch(() => {}),
         };
-      }), { concurrent: true });
+      })
+      
+      const listr = new Listr(tasks, { concurrent: true });
 
-      return tasks.run().catch((err) => {
-        throw err;
-      });
+      return listr.run();
     })
     .then(() => htmlPagePath);
 };
